@@ -4,29 +4,29 @@ resource "aws_vpc" "vpc" {
   instance_tenancy = "default"
 
   tags = {
-    Name = "var.vpc_name"
+    Name = var.vpc_name
   }
 }
 # Internet Gateway and attach to vpc
 resource "aws_internet_gateway" "IGW" {
-  vpc_id = aws_vpc.var.vpc_name.id
+  vpc_id = aws_vpc.vpc.id
 
   tags = {
-    Name = "var.IGW"
+    Name = var.IGW
   }
 }
 # Create Subnet
 resource "aws_subnet" "public_subnet" {
-  vpc_id     = aws_vpc.var.vpc_name.id
+  vpc_id     = aws_vpc.vpc.id
   cidr_block = "10.0.1.0/24"
-
+  map_public_ip_on_launch = true
   tags = {
     Name = var.Public-Subnet
   }
 }
 # Create Subnet
 resource "aws_subnet" "private_subnet" {
-  vpc_id     = aws_vpc.var.vpc_name.id
+  vpc_id     = aws_vpc.vpc.id
   cidr_block = "10.0.2.0/24"
 
   tags = {
@@ -54,7 +54,7 @@ resource "aws_nat_gateway" "natgw" {
 
 # Route Table and route
 resource "aws_route_table" "public_route" {
-  vpc_id = aws_vpc.var.vpc_name.id
+  vpc_id = aws_vpc.vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -62,12 +62,12 @@ resource "aws_route_table" "public_route" {
   }
 
   tags = {
-    Name = "public_route"
+    Name = var.public_route
   }
 }
 
 resource "aws_route_table" "private_route" {
-  vpc_id = aws_vpc.var.vpc_name.id
+  vpc_id = aws_vpc.vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -75,7 +75,7 @@ resource "aws_route_table" "private_route" {
   }
 
   tags = {
-    Name = "private_route"
+    Name = var.private_route
   }
 }
 
@@ -94,7 +94,7 @@ resource "aws_route_table_association" "b" {
 # Create Security Group
 resource "aws_security_group" "WebSG" {
   name        = var.WebSG
-  vpc_id      = aws_vpc.var.vpc_name.id
+  vpc_id      = aws_vpc.vpc.id
 
   tags = {
     Name = var.WebSG
@@ -149,6 +149,7 @@ resource "aws_instance" "PublicWebServer" {
   subnet_id     = aws_subnet.public_subnet.id
   associate_public_ip_address = true
   key_name = aws_key_pair.my_key_pair.key_name
+  security_groups = [aws_security_group.WebSG.id]
   tags = {
     Name = var.PublicWebServer
   }
@@ -160,6 +161,7 @@ resource "aws_instance" "PublicWebServer" {
   subnet_id     = aws_subnet.private_subnet.id
   associate_public_ip_address = false
   key_name = aws_key_pair.my_key_pair.key_name
+  security_groups = [aws_security_group.WebSG.id]
   tags = {
     Name = var.PrivateServer
   }
